@@ -1,0 +1,35 @@
+# Запросы для демонстрации. VS Code: расширение REST Client, JetBrains: встроенный HTTP Client.
+# Замени items на свой ресурс и тела — на поля своей сущности.
+
+### Сервис жив?
+GET http://localhost:8000/health
+
+### Создать
+POST http://localhost:8000/api/items
+Content-Type: application/json
+
+{ "title": "Первая запись" }
+
+### Список
+GET http://localhost:8000/api/items
+
+### Получить
+GET http://localhost:8000/api/items/1
+
+### Изменить
+PATCH http://localhost:8000/api/items/1
+Content-Type: application/json
+
+{ "title": "Изменённая запись" }
+
+### Удалить
+DELETE http://localhost:8000/api/items/1
+
+### После удаления → 404
+GET http://localhost:8000/api/items/1
+
+### Сломанный JSON → 400
+POST http://localhost:8000/api/items
+Content-Type: application/json
+
+{ "title":
