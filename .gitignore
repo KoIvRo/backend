@@ -30,7 +30,6 @@ obj/
 .DS_Store
 Thumbs.db
 
-# Базы и отчёты
+# Базы
 *.db
 *.sqlite3
-backcheck-report.md
