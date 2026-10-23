@@ -56,3 +56,13 @@ func (h *Handler) CreateClass(w http.ResponseWriter, r *http.Request) {
 
 	writeJSON(w, http.StatusCreated, created)
 }
+
+func (h *Handler) ListClasses(w http.ResponseWriter, r *http.Request) {
+	classes, err := h.classes.List(r.Context())
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Internal server error", "")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, classes)
+}
