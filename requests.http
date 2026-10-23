@@ -1,44 +1,50 @@
-# Запросы для демонстрации. В VS Code нужно расширение REST Client, в JetBrains IDE всё встроено.
-# Над каждым запросом появляется ссылка «Send Request».
-# items заменить на свой ресурс, тела на поля своей сущности.
-
 @base = http://localhost:8000
 
 ### Сервис жив?
 GET {{base}}/health
 
-### Создать
-POST {{base}}/api/items
+### Создать групповое занятие
+POST {{base}}/api/classes
 Content-Type: application/json
 
-{ "title": "Первая запись" }
+{
+  "name": "Йога",
+  "trainer": "Анна",
+  "starts_at": "2026-11-02T18:30:00+10:00",
+  "capacity": 15
+}
 
-### Список
-GET {{base}}/api/items
+### Список занятий
+GET {{base}}/api/classes
 
-### Получить одну запись
-GET {{base}}/api/items/1
+### Получить одно занятие
+GET {{base}}/api/classes/1
 
-### Изменить
-PATCH {{base}}/api/items/1
+### Изменить занятие
+PATCH {{base}}/api/classes/1
 Content-Type: application/json
 
-{ "title": "Изменённая запись" }
+{ "capacity": 20 }
 
-### Удалить
-DELETE {{base}}/api/items/1
+### Удалить занятие
+DELETE {{base}}/api/classes/1
 
 ### После удаления должен быть 404
-GET {{base}}/api/items/1
+GET {{base}}/api/classes/1
 
 ### Сломанный JSON, должен быть 400
-POST {{base}}/api/items
+POST {{base}}/api/classes
 Content-Type: application/json
 
-{ "title":
+{ "name":
 
 ### Пустое обязательное поле, должен быть 400
-POST {{base}}/api/items
+POST {{base}}/api/classes
 Content-Type: application/json
 
-{ "title": "" }
+{
+  "name": "",
+  "trainer": "Анна",
+  "starts_at": "2026-11-02T18:30:00+10:00",
+  "capacity": 15
+}

@@ -5,12 +5,17 @@ import (
 	"net/http"
 
 	"github.com/KoIvRo/backend/internal/handler"
+	"github.com/KoIvRo/backend/internal/repository"
 )
 
 func main() {
+	classRepository := repository.NewMemoryClassRepository()
+	api := handler.New(classRepository)
+
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /health", handler.Health)
+	mux.HandleFunc("POST /api/classes", api.CreateClass)
 
 	log.Println("server started on http://localhost:8000")
 

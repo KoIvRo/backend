@@ -13,3 +13,15 @@ func writeJSON(w http.ResponseWriter, status int, data any) {
 		return
 	}
 }
+
+type errorResponse struct {
+	Error string `json:"error"`
+	Field string `json:"field,omitempty"`
+}
+
+func writeError(w http.ResponseWriter, status int, message string, field string) {
+	writeJSON(w, status, errorResponse{
+		Error: message,
+		Field: field,
+	})
+}
