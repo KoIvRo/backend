@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/KoIvRo/backend/internal/apidocs"
 	"github.com/KoIvRo/backend/internal/handler"
 	"github.com/KoIvRo/backend/internal/logging"
 	"github.com/KoIvRo/backend/internal/repository"
@@ -15,6 +16,7 @@ func main() {
 	api := handler.New(classRepository, logger)
 
 	mux := http.NewServeMux()
+	apidocs.Register(mux)
 
 	mux.HandleFunc("GET /health", handler.Health)
 	mux.HandleFunc("POST /api/classes", api.CreateClass)
