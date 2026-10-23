@@ -44,7 +44,7 @@ func TestMemoryClassRepository(t *testing.T) {
 		t.Errorf("Found != Created: %v", err)
 	}
 
-	list, err := repo.List(ctx)
+	list, err := repo.List(ctx, ListOptions{})
 	if err != nil {
 		t.Fatalf("Error in list func: %v", err)
 	} else if len(list) != 1 {

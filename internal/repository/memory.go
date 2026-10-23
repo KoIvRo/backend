@@ -2,6 +2,8 @@ package repository
 
 import (
 	"context"
+	"sort"
+	"strings"
 	"sync"
 
 	"github.com/KoIvRo/backend/internal/domain"
@@ -30,18 +32,33 @@ func (r *MemoryClassRepository) Create(ctx context.Context, class domain.Class) 
 	return class, nil
 }
 
-func (r *MemoryClassRepository) List(ctx context.Context) ([]domain.Class, error) {
+func (r *MemoryClassRepository) List(ctx context.Context, options ListOptions) ([]domain.Class, error) {
 	r.mu.RLock()
 
 	defer r.mu.RUnlock()
 
-	list := make([]domain.Class, 0, len(r.classes))
+	classes := make([]domain.Class, 0, len(r.classes))
 
 	for _, class := range r.classes {
-		list = append(list, class)
+		if options.Trainer != "" && !strings.EqualFold(class.Trainer, options.Trainer) {
+			continue
+		}
+
+		classes = append(classes, class)
 	}
 
-	return list, nil
+	sort.Slice(classes, func(i, j int) bool { return classes[i].ID < classes[j].ID })
+
+	start := options.Offset
+	if start > len(classes) {
+		start = len(classes)
+	}
+	end := len(classes)
+	if options.Limit > 0 && start+options.Limit < end {
+		end = start + options.Limit
+	}
+
+	return classes[start:end], nil
 
 }
 

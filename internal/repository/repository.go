@@ -9,11 +9,16 @@ import (
 
 var ErrNotFound = errors.New("class not found")
 
-// Интерфейс для управления групповыми занятими
 type ClassRepository interface {
 	Create(ctx context.Context, class domain.Class) (domain.Class, error)
-	List(ctx context.Context) ([]domain.Class, error)
+	List(ctx context.Context, options ListOptions) ([]domain.Class, error)
 	GetByID(ctx context.Context, id int) (domain.Class, error)
 	Update(ctx context.Context, id int, class domain.Class) (domain.Class, error)
 	Delete(ctx context.Context, id int) error
+}
+
+type ListOptions struct {
+	Trainer string
+	Limit   int
+	Offset  int
 }

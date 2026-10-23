@@ -3,7 +3,7 @@
 ### Сервис жив?
 GET {{base}}/health
 
-### Создать групповое занятие
+### Создать групповое занятие (Иван)
 POST {{base}}/api/classes
 Content-Type: application/json
 
@@ -14,17 +14,39 @@ Content-Type: application/json
   "capacity": 15
 }
 
+### Групповое занятие (Дмитрий)
+POST {{base}}/api/classes
+Content-Type: application/json
+
+{
+  "name": "Бодибилдинг",
+  "trainer": "Дмитрий",
+  "starts_at": "2026-11-02T18:30:00+10:00",
+  "capacity": 15
+}
+
 ### Список занятий
 GET {{base}}/api/classes
 
 ### Получить одно занятие
 GET {{base}}/api/classes/1
 
-### Изменить занятие
+### Полностью заменить занятие
+PUT {{base}}/api/classes/1
+Content-Type: application/json
+
+{
+  "name": "Силовая тренировка",
+  "trainer": "Иван",
+  "starts_at": "2026-11-03T19:00:00+10:00",
+  "capacity": 20
+}
+
+### Частично изменить занятие
 PATCH {{base}}/api/classes/1
 Content-Type: application/json
 
-{ "capacity": 20 }
+{ "capacity": 50 }
 
 ### Удалить занятие
 DELETE {{base}}/api/classes/1
@@ -48,3 +70,10 @@ Content-Type: application/json
   "starts_at": "2026-11-02T18:30:00+10:00",
   "capacity": 15
 }
+
+### Фильтрация и пагинация (Иван)
+  GET {{base}}/api/classes?trainer=Иван&limit=10&offset=0
+
+
+### Фильтрация и пагинация (Дмитрий)
+  GET {{base}}/api/classes?trainer=Дмитрий&limit=10&offset=0

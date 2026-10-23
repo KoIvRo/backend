@@ -27,6 +27,22 @@ type createClassRequest struct {
 	Capacity int       `json:"capacity"`
 }
 
+func (r createClassRequest) toClass() domain.Class {
+	return domain.Class{
+		Name:     strings.TrimSpace(r.Name),
+		Trainer:  strings.TrimSpace(r.Trainer),
+		StartsAt: r.StartsAt,
+		Capacity: r.Capacity,
+	}
+}
+
+type updateClassRequest struct {
+	Name     *string    `json:"name"`
+	Trainer  *string    `json:"trainer"`
+	StartsAt *time.Time `json:"starts_at"`
+	Capacity *int       `json:"capacity"`
+}
+
 func (h *Handler) CreateClass(w http.ResponseWriter, r *http.Request) {
 	var request createClassRequest
 
@@ -38,12 +54,7 @@ func (h *Handler) CreateClass(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	class := domain.Class{
-		Name:     strings.TrimSpace(request.Name),
-		Trainer:  strings.TrimSpace(request.Trainer),
-		StartsAt: request.StartsAt,
-		Capacity: request.Capacity,
-	}
+	class := request.toClass()
 
 	if validationError := class.Validate(); validationError != nil {
 		writeError(w, http.StatusBadRequest, validationError.Message, validationError.Field)
@@ -59,8 +70,44 @@ func (h *Handler) CreateClass(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, created)
 }
 
+func optionsFromRequest(r *http.Request) (repository.ListOptions, *domain.ValidationError) {
+	options := repository.ListOptions{Trainer: strings.TrimSpace(r.URL.Query().Get("trainer"))}
+
+	if value := r.URL.Query().Get("limit"); value != "" {
+		limit, err := strconv.Atoi(value)
+		if err != nil || limit <= 0 || limit > 100 {
+			return repository.ListOptions{}, &domain.ValidationError{
+				Field:   "limit",
+				Message: "limit must be between 1 and 100",
+			}
+		}
+
+		options.Limit = limit
+	}
+
+	if value := r.URL.Query().Get("offset"); value != "" {
+		offset, err := strconv.Atoi(value)
+		if err != nil || offset < 0 {
+			return repository.ListOptions{}, &domain.ValidationError{
+				Field:   "offset",
+				Message: "offset must be zero or greater",
+			}
+		}
+
+		options.Offset = offset
+	}
+
+	return options, nil
+}
+
 func (h *Handler) ListClasses(w http.ResponseWriter, r *http.Request) {
-	classes, err := h.classes.List(r.Context())
+	options, validationError := optionsFromRequest(r)
+	if validationError != nil {
+		writeError(w, http.StatusBadRequest, validationError.Message, validationError.Field)
+		return
+	}
+
+	classes, err := h.classes.List(r.Context(), options)
 	if err != nil {
 		writeInternalServerError(w)
 		return
@@ -69,29 +116,28 @@ func (h *Handler) ListClasses(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, classes)
 }
 
-func getIdFromRequest(r *http.Request) (int, error) {
+func getIDFromRequest(r *http.Request) (int, error) {
 	id, err := strconv.Atoi(r.PathValue("id"))
 
-	if err != nil || id < 0 {
-		return 0, errors.New("Invalid Class ID")
+	if err != nil || id <= 0 {
+		return 0, errors.New("invalid class ID")
 	}
 
 	return id, nil
-
 }
 
 func (h *Handler) GetClass(w http.ResponseWriter, r *http.Request) {
-	id, err := getIdFromRequest(r)
+	id, err := getIDFromRequest(r)
 
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "Invalid ID", "ID")
+		writeError(w, http.StatusBadRequest, "invalid class ID", "id")
 		return
 	}
 
 	class, err := h.classes.GetByID(r.Context(), id)
 
 	if errors.Is(err, repository.ErrNotFound) {
-		writeError(w, http.StatusBadRequest, "class not found", "")
+		writeError(w, http.StatusNotFound, "class not found", "")
 		return
 	}
 
@@ -104,17 +150,17 @@ func (h *Handler) GetClass(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) DeleteClass(w http.ResponseWriter, r *http.Request) {
-	id, err := getIdFromRequest(r)
+	id, err := getIDFromRequest(r)
 
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "Invalid ID", "ID")
+		writeError(w, http.StatusBadRequest, "invalid class ID", "id")
 		return
 	}
 
 	err = h.classes.Delete(r.Context(), id)
 
 	if errors.Is(err, repository.ErrNotFound) {
-		writeError(w, http.StatusBadRequest, "class not found", "")
+		writeError(w, http.StatusNotFound, "class not found", "")
 		return
 	}
 
@@ -124,4 +170,105 @@ func (h *Handler) DeleteClass(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *Handler) ReplaceClass(w http.ResponseWriter, r *http.Request) {
+	id, err := getIDFromRequest(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid class ID", "id")
+		return
+	}
+
+	var request createClassRequest
+
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+
+	if err := decoder.Decode(&request); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid JSON", "")
+		return
+	}
+
+	class := request.toClass()
+
+	if validationError := class.Validate(); validationError != nil {
+		writeError(w, http.StatusBadRequest, validationError.Message, validationError.Field)
+		return
+	}
+
+	updated, err := h.classes.Update(r.Context(), id, class)
+	if errors.Is(err, repository.ErrNotFound) {
+		writeError(w, http.StatusNotFound, "class not found", "")
+		return
+	}
+
+	if err != nil {
+		writeInternalServerError(w)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, updated)
+}
+
+func (h *Handler) UpdateClass(w http.ResponseWriter, r *http.Request) {
+	id, err := getIDFromRequest(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid class ID", "id")
+		return
+	}
+
+	class, err := h.classes.GetByID(r.Context(), id)
+	if errors.Is(err, repository.ErrNotFound) {
+		writeError(w, http.StatusNotFound, "class not found", "")
+		return
+	}
+
+	if err != nil {
+		writeInternalServerError(w)
+		return
+	}
+
+	var request updateClassRequest
+
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+
+	if err := decoder.Decode(&request); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid JSON", "")
+		return
+	}
+
+	if request.Name != nil {
+		class.Name = strings.TrimSpace(*request.Name)
+	}
+
+	if request.Trainer != nil {
+		class.Trainer = strings.TrimSpace(*request.Trainer)
+	}
+
+	if request.StartsAt != nil {
+		class.StartsAt = *request.StartsAt
+	}
+
+	if request.Capacity != nil {
+		class.Capacity = *request.Capacity
+	}
+
+	if validationError := class.Validate(); validationError != nil {
+		writeError(w, http.StatusBadRequest, validationError.Message, validationError.Field)
+		return
+	}
+
+	updated, err := h.classes.Update(r.Context(), id, class)
+	if errors.Is(err, repository.ErrNotFound) {
+		writeError(w, http.StatusNotFound, "class not found", "")
+		return
+	}
+
+	if err != nil {
+		writeInternalServerError(w)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, updated)
 }
