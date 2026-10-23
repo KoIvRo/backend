@@ -7,5 +7,5 @@ type Class struct {
 	Name     string    `json:"name"`
 	Trainer  string    `json:"trainer"`
 	StartsAt time.Time `json:"starts_at"`
-	Capasity int       `json:"capasity"`
+	Capacity int       `json:"capacity"`
 }
