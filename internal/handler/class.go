@@ -52,7 +52,7 @@ func (h *Handler) CreateClass(w http.ResponseWriter, r *http.Request) {
 
 	created, err := h.classes.Create(r.Context(), class)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "internal server error", "")
+		writeInternalServerError(w)
 		return
 	}
 
@@ -62,7 +62,7 @@ func (h *Handler) CreateClass(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) ListClasses(w http.ResponseWriter, r *http.Request) {
 	classes, err := h.classes.List(r.Context())
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "Internal server error", "")
+		writeInternalServerError(w)
 		return
 	}
 
@@ -85,16 +85,19 @@ func (h *Handler) GetClass(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "Invalid ID", "ID")
+		return
 	}
 
 	class, err := h.classes.GetByID(r.Context(), id)
 
 	if errors.Is(err, repository.ErrNotFound) {
 		writeError(w, http.StatusBadRequest, "class not found", "")
+		return
 	}
 
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "Internal server error", "")
+		writeInternalServerError(w)
+		return
 	}
 
 	writeJSON(w, http.StatusOK, class)
