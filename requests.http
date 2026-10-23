@@ -72,8 +72,13 @@ Content-Type: application/json
 }
 
 ### Фильтрация и пагинация (Иван)
-  GET {{base}}/api/classes?trainer=Иван&limit=10&offset=0
-
+GET {{base}}/api/classes?trainer=Иван&limit=10&offset=0
 
 ### Фильтрация и пагинация (Дмитрий)
-  GET {{base}}/api/classes?trainer=Дмитрий&limit=10&offset=0
+GET {{base}}/api/classes?trainer=Дмитрий&limit=10&offset=0
+
+### Фильтр по названию и пагинация
+GET {{base}}/api/classes?name=Качалка&limit=10&offset=0
+
+### Фильтр по названию и тренеру
+GET {{base}}/api/classes?name=Качалка&trainer=Иван&limit=10&offset=0

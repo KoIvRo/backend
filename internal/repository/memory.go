@@ -40,6 +40,10 @@ func (r *MemoryClassRepository) List(ctx context.Context, options ListOptions) (
 	classes := make([]domain.Class, 0, len(r.classes))
 
 	for _, class := range r.classes {
+		if options.Name != "" && !strings.EqualFold(class.Name, options.Name) {
+			continue
+		}
+
 		if options.Trainer != "" && !strings.EqualFold(class.Trainer, options.Trainer) {
 			continue
 		}

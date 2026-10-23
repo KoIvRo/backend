@@ -18,6 +18,7 @@ type ClassRepository interface {
 }
 
 type ListOptions struct {
+	Name    string
 	Trainer string
 	Limit   int
 	Offset  int

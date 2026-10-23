@@ -71,7 +71,10 @@ func (h *Handler) CreateClass(w http.ResponseWriter, r *http.Request) {
 }
 
 func optionsFromRequest(r *http.Request) (repository.ListOptions, *domain.ValidationError) {
-	options := repository.ListOptions{Trainer: strings.TrimSpace(r.URL.Query().Get("trainer"))}
+	options := repository.ListOptions{
+		Name:    strings.TrimSpace(r.URL.Query().Get("name")),
+		Trainer: strings.TrimSpace(r.URL.Query().Get("trainer")),
+	}
 
 	if value := r.URL.Query().Get("limit"); value != "" {
 		limit, err := strconv.Atoi(value)
