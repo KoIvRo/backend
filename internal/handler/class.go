@@ -2,7 +2,9 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -65,4 +67,35 @@ func (h *Handler) ListClasses(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, classes)
+}
+
+func getIdFromRequest(r *http.Request) (int, error) {
+	id, err := strconv.Atoi(r.PathValue("id"))
+
+	if err != nil || id < 0 {
+		return 0, errors.New("Invalid Class ID")
+	}
+
+	return id, nil
+
+}
+
+func (h *Handler) GetClass(w http.ResponseWriter, r *http.Request) {
+	id, err := getIdFromRequest(r)
+
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "Invalid ID", "ID")
+	}
+
+	class, err := h.classes.GetByID(r.Context(), id)
+
+	if errors.Is(err, repository.ErrNotFound) {
+		writeError(w, http.StatusBadRequest, "class not found", "")
+	}
+
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Internal server error", "")
+	}
+
+	writeJSON(w, http.StatusOK, class)
 }

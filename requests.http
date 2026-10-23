@@ -8,8 +8,8 @@ POST {{base}}/api/classes
 Content-Type: application/json
 
 {
-  "name": "Йога",
-  "trainer": "Анна",
+  "name": "Качалка",
+  "trainer": "Иван",
   "starts_at": "2026-11-02T18:30:00+10:00",
   "capacity": 15
 }
