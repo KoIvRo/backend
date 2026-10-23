@@ -16,6 +16,7 @@ func main() {
 
 	mux.HandleFunc("GET /health", handler.Health)
 	mux.HandleFunc("POST /api/classes", api.CreateClass)
+	mux.HandleFunc("GET /api/classes", api.ListClasses)
 
 	log.Println("server started on http://localhost:8000")
 
