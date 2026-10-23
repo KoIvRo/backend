@@ -1,16 +1,18 @@
 package main
 
 import (
-	"log"
 	"net/http"
+	"os"
 
 	"github.com/KoIvRo/backend/internal/handler"
+	"github.com/KoIvRo/backend/internal/logging"
 	"github.com/KoIvRo/backend/internal/repository"
 )
 
 func main() {
+	logger := logging.New(os.Stdout)
 	classRepository := repository.NewMemoryClassRepository()
-	api := handler.New(classRepository)
+	api := handler.New(classRepository, logger)
 
 	mux := http.NewServeMux()
 
@@ -22,9 +24,18 @@ func main() {
 	mux.HandleFunc("PATCH /api/classes/{id}", api.UpdateClass)
 	mux.HandleFunc("DELETE /api/classes/{id}", api.DeleteClass)
 
-	log.Println("server started on http://localhost:8000")
+	logger.Info(
+		"server_started",
+		"event", "server_started",
+		"address", "http://localhost:8000",
+	)
 
-	if err := http.ListenAndServe(":8000", mux); err != nil {
-		log.Fatal(err)
+	if err := http.ListenAndServe(":8000", handler.LoggingMiddleware(logger, mux)); err != nil {
+		logger.Error(
+			"server_stopped",
+			"event", "server_stopped",
+			"error", err,
+		)
+		os.Exit(1)
 	}
 }

@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"strings"
@@ -14,10 +15,14 @@ import (
 
 type Handler struct {
 	classes repository.ClassRepository
+	logger  *slog.Logger
 }
 
-func New(classes repository.ClassRepository) *Handler {
-	return &Handler{classes: classes}
+func New(classes repository.ClassRepository, logger *slog.Logger) *Handler {
+	return &Handler{
+		classes: classes,
+		logger:  logger,
+	}
 }
 
 type createClassRequest struct {
@@ -66,6 +71,8 @@ func (h *Handler) CreateClass(w http.ResponseWriter, r *http.Request) {
 		writeInternalServerError(w)
 		return
 	}
+
+	h.logClass("class_created", created)
 
 	writeJSON(w, http.StatusCreated, created)
 }
@@ -160,6 +167,17 @@ func (h *Handler) DeleteClass(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	class, err := h.classes.GetByID(r.Context(), id)
+	if errors.Is(err, repository.ErrNotFound) {
+		writeError(w, http.StatusNotFound, "class not found", "")
+		return
+	}
+
+	if err != nil {
+		writeInternalServerError(w)
+		return
+	}
+
 	err = h.classes.Delete(r.Context(), id)
 
 	if errors.Is(err, repository.ErrNotFound) {
@@ -171,6 +189,8 @@ func (h *Handler) DeleteClass(w http.ResponseWriter, r *http.Request) {
 		writeInternalServerError(w)
 		return
 	}
+
+	h.logClass("class_deleted", class)
 
 	w.WriteHeader(http.StatusNoContent)
 }
@@ -209,6 +229,8 @@ func (h *Handler) ReplaceClass(w http.ResponseWriter, r *http.Request) {
 		writeInternalServerError(w)
 		return
 	}
+
+	h.logClass("class_replaced", updated)
 
 	writeJSON(w, http.StatusOK, updated)
 }
@@ -273,5 +295,19 @@ func (h *Handler) UpdateClass(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	h.logClass("class_updated", updated)
+
 	writeJSON(w, http.StatusOK, updated)
+}
+
+func (h *Handler) logClass(event string, class domain.Class) {
+	h.logger.Info(
+		event,
+		"event", event,
+		"class_id", class.ID,
+		"name", class.Name,
+		"trainer", class.Trainer,
+		"starts_at", class.StartsAt,
+		"capacity", class.Capacity,
+	)
 }
