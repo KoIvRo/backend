@@ -18,6 +18,7 @@ func main() {
 	mux.HandleFunc("POST /api/classes", api.CreateClass)
 	mux.HandleFunc("GET /api/classes", api.ListClasses)
 	mux.HandleFunc("GET /api/classes/{id}", api.GetClass)
+	mux.HandleFunc("DELETE /api/classes/{id}", api.DeleteClass)
 
 	log.Println("server started on http://localhost:8000")
 

@@ -102,3 +102,26 @@ func (h *Handler) GetClass(w http.ResponseWriter, r *http.Request) {
 
 	writeJSON(w, http.StatusOK, class)
 }
+
+func (h *Handler) DeleteClass(w http.ResponseWriter, r *http.Request) {
+	id, err := getIdFromRequest(r)
+
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "Invalid ID", "ID")
+		return
+	}
+
+	err = h.classes.Delete(r.Context(), id)
+
+	if errors.Is(err, repository.ErrNotFound) {
+		writeError(w, http.StatusBadRequest, "class not found", "")
+		return
+	}
+
+	if err != nil {
+		writeInternalServerError(w)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
