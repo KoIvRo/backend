@@ -1,0 +1,6 @@
+.git
+.gitignore
+*.log
+requests.http
+docs/
+README.md

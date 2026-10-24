@@ -1,10 +1,49 @@
 {
   "base_url": "http://localhost:8000",
-  "resource": "items",
+  "resource": "classes",
   "id_field": "id",
   "missing_id": "999999",
   "list_key": null,
-  "create": { "title": "Первая запись" },
-  "update": { "title": "Изменённая запись" },
-  "required_field": "title"
+  "create": {
+    "name": "Йога",
+    "trainer": "Анна",
+    "starts_at": "2026-11-02T18:30:00+10:00",
+    "capacity": 15
+  },
+  "update": {
+    "capacity": 20
+  },
+  "required_field": "name",
+  "errors": [
+    {
+      "body": {
+        "name": ""
+      },
+      "field": "name"
+    },
+    {
+      "body": {
+        "trainer": ""
+      },
+      "field": "trainer"
+    },
+    {
+      "body": {
+        "starts_at": null
+      },
+      "field": "starts_at"
+    },
+    {
+      "body": {
+        "capacity": 0
+      },
+      "field": "capacity"
+    }
+  ],
+  "filter": {
+    "param": "trainer",
+    "value": "Анна",
+    "other": "Иван"
+  },
+  "openapi_path": "/openapi.json"
 }
