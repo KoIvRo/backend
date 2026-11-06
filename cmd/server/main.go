@@ -60,7 +60,7 @@ func main() {
 		"event", "database_connected",
 	)
 
-	classRepository := repository.NewMemoryClassRepository()
+	classRepository := repository.NewPostgresClassRepository(pool)
 	api := handler.New(classRepository, logger)
 
 	mux := http.NewServeMux()
