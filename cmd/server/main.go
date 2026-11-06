@@ -61,7 +61,8 @@ func main() {
 	)
 
 	classRepository := repository.NewPostgresClassRepository(pool)
-	api := handler.New(classRepository, logger)
+	signupRepository := repository.NewPostgresSignupRepository(pool)
+	api := handler.New(classRepository, classRepository, signupRepository, logger)
 
 	mux := http.NewServeMux()
 	apidocs.Register(mux)
@@ -69,10 +70,13 @@ func main() {
 	mux.HandleFunc("GET /health", handler.Health)
 	mux.HandleFunc("POST /api/classes", api.CreateClass)
 	mux.HandleFunc("GET /api/classes", api.ListClasses)
+	mux.HandleFunc("GET /api/classes/stats", api.ClassStats)
 	mux.HandleFunc("GET /api/classes/{id}", api.GetClass)
 	mux.HandleFunc("PUT /api/classes/{id}", api.ReplaceClass)
 	mux.HandleFunc("PATCH /api/classes/{id}", api.UpdateClass)
 	mux.HandleFunc("DELETE /api/classes/{id}", api.DeleteClass)
+	mux.HandleFunc("POST /api/classes/{id}/signups", api.CreateSignup)
+	mux.HandleFunc("GET /api/classes/{id}/signups", api.ListSignups)
 
 	logger.Info(
 		"server_started",

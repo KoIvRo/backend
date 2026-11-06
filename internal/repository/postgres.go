@@ -44,16 +44,18 @@ func (r *PostgresClassRepository) List(ctx context.Context, options ListOptions)
 	const query = `
 		SELECT id, name, trainer, starts_at, capacity
 		FROM classes
-		WHERE ($1::text = '' OR LOWER(name) = LOWER($1))
-		  AND ($2::text = '' OR LOWER(trainer) = LOWER($2))
+		WHERE ($1::text = '' OR STRPOS(LOWER(name), LOWER($1)) > 0)
+		  AND ($2::text = '' OR LOWER(name) = LOWER($2))
+		  AND ($3::text = '' OR LOWER(trainer) = LOWER($3))
 		ORDER BY id
-		LIMIT NULLIF($3::integer, 0)
-		OFFSET $4
+		LIMIT NULLIF($4::integer, 0)
+		OFFSET $5
 	`
 
 	rows, err := r.pool.Query(
 		ctx,
 		query,
+		options.Query,
 		options.Name,
 		options.Trainer,
 		options.Limit,
@@ -80,6 +82,40 @@ func (r *PostgresClassRepository) List(ctx context.Context, options ListOptions)
 	}
 
 	return classes, nil
+}
+
+func (r *PostgresClassRepository) MostAttended(ctx context.Context) ([]domain.ClassStats, error) {
+	const query = `
+		SELECT c.id, c.name, COUNT(s.id)::integer AS signup_count
+		FROM classes AS c
+		LEFT JOIN signups AS s ON s.class_id = c.id
+		GROUP BY c.id, c.name
+		ORDER BY signup_count DESC, c.id
+	`
+
+	rows, err := r.pool.Query(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("get class statistics: %w", err)
+	}
+	defer rows.Close()
+
+	statistics := make([]domain.ClassStats, 0)
+
+	for rows.Next() {
+		var stats domain.ClassStats
+
+		if err := rows.Scan(&stats.ClassID, &stats.Name, &stats.SignupCount); err != nil {
+			return nil, fmt.Errorf("scan class statistics: %w", err)
+		}
+
+		statistics = append(statistics, stats)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate class statistics: %w", err)
+	}
+
+	return statistics, nil
 }
 
 func (r *PostgresClassRepository) GetByID(ctx context.Context, id int) (domain.Class, error) {
@@ -168,3 +204,4 @@ func scanClass(row rowScanner) (domain.Class, error) {
 }
 
 var _ ClassRepository = (*PostgresClassRepository)(nil)
+var _ ClassStatsRepository = (*PostgresClassRepository)(nil)
