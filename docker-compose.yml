@@ -1,0 +1,42 @@
+x-backend-environment: &backend-environment
+  POSTGRES_HOST: db
+  POSTGRES_PORT: 5432
+  POSTGRES_DB: ${POSTGRES_DB:-fitnes-app}
+  POSTGRES_USER: ${POSTGRES_USER:-admin}
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin}
+  PGDATA: /var/lib/postgresql/data
+
+
+services:
+  backend:
+    build: .
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - backend-net
+    environment:
+      <<: *backend-environment
+
+  db:
+    image: postgres:18.6
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - backend-net
+    environment:
+        <<: *backend-environment
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  db_data:
+
+networks:
+  backend-net:
+    driver: bridge
