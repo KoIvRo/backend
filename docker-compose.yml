@@ -15,6 +15,20 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    networks:
+      - backend-net
+    environment:
+      <<: *backend-environment
+
+  migrate:
+    build: .
+    entrypoint: ["/migrate"]
+    command: ["up"]
+    depends_on:
+      db:
+        condition: service_healthy
     networks:
       - backend-net
     environment:
