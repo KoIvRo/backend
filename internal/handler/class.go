@@ -15,12 +15,21 @@ import (
 
 type Handler struct {
 	classes repository.ClassRepository
+	stats   repository.ClassStatsRepository
+	signups repository.SignupRepository
 	logger  *slog.Logger
 }
 
-func New(classes repository.ClassRepository, logger *slog.Logger) *Handler {
+func New(
+	classes repository.ClassRepository,
+	stats repository.ClassStatsRepository,
+	signups repository.SignupRepository,
+	logger *slog.Logger,
+) *Handler {
 	return &Handler{
 		classes: classes,
+		stats:   stats,
+		signups: signups,
 		logger:  logger,
 	}
 }
@@ -79,6 +88,7 @@ func (h *Handler) CreateClass(w http.ResponseWriter, r *http.Request) {
 
 func optionsFromRequest(r *http.Request) (repository.ListOptions, *domain.ValidationError) {
 	options := repository.ListOptions{
+		Query:   strings.TrimSpace(r.URL.Query().Get("q")),
 		Name:    strings.TrimSpace(r.URL.Query().Get("name")),
 		Trainer: strings.TrimSpace(r.URL.Query().Get("trainer")),
 	}

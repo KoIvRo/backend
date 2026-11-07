@@ -2,6 +2,7 @@
   "base_url": "http://localhost:8000",
   "resource": "classes",
   "id_field": "id",
+  "text_field": "name",
   "missing_id": "999999",
   "list_key": null,
   "create": {
@@ -45,5 +46,43 @@
     "value": "Анна",
     "other": "Иван"
   },
+  "search": {
+    "param": "q",
+    "field": "name"
+  },
+  "child": {
+    "resource": "signups",
+    "create": {
+      "client": "Иванов",
+      "phone": "+79990001122"
+    },
+    "parent_field": "class_id"
+  },
+  "rule": {
+    "description": "Нельзя записаться, если на занятии нет свободных мест",
+    "parent": {
+      "capacity": 1
+    },
+    "setup": [
+      {
+        "method": "POST",
+        "path": "/api/classes/{id}/signups",
+        "body": {
+          "client": "Иванов",
+          "phone": "+79990001122"
+        }
+      }
+    ],
+    "violate": {
+      "method": "POST",
+      "path": "/api/classes/{id}/signups",
+      "body": {
+        "client": "Петров",
+        "phone": "+79990002233"
+      }
+    },
+    "expect_status": 409
+  },
+  "stats_path": "/api/classes/stats",
   "openapi_path": "/openapi.json"
 }

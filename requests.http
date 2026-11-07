@@ -82,3 +82,30 @@ GET {{base}}/api/classes?name=Качалка&limit=10&offset=0
 
 ### Фильтр по названию и тренеру
 GET {{base}}/api/classes?name=Качалка&trainer=Иван&limit=10&offset=0
+
+### Поиск по части названия без учёта регистра
+GET {{base}}/api/classes?q=йог
+
+### Самые посещаемые занятия
+GET {{base}}/api/classes/stats
+
+### Записать клиента на занятие
+POST {{base}}/api/classes/1/signups
+Content-Type: application/json
+
+{
+  "client": "Иванов",
+  "phone": "+79990001122"
+}
+
+### Список записей на занятие
+GET {{base}}/api/classes/1/signups
+
+### Повторная запись клиента, должен быть 409
+POST {{base}}/api/classes/1/signups
+Content-Type: application/json
+
+{
+  "client": "Иванов",
+  "phone": "+79990001122"
+}

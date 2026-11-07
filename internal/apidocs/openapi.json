@@ -2,8 +2,8 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Fitness Club API",
-    "description": "API для управления расписанием групповых занятий фитнес-клуба.",
-    "version": "1.0.0"
+    "description": "API для управления расписанием, записями клиентов и статистикой групповых занятий фитнес-клуба.",
+    "version": "2.0.0"
   },
   "servers": [
     {
@@ -32,6 +32,14 @@
       "get": {
         "summary": "Получить список занятий",
         "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Поиск по части названия без учёта регистра",
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "name",
             "in": "query",
@@ -217,6 +225,91 @@
           }
         }
       }
+    },
+    "/api/classes/stats": {
+      "get": {
+        "summary": "Получить самые посещаемые занятия",
+        "responses": {
+          "200": {
+            "description": "Занятия с количеством записей",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ClassStats"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/classes/{id}/signups": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ClassID"
+        }
+      ],
+      "get": {
+        "summary": "Получить записи на занятие",
+        "responses": {
+          "200": {
+            "description": "Список записей",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Signup"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "post": {
+        "summary": "Записать клиента на занятие",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignupInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Запись создана",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Signup"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -309,6 +402,61 @@
           }
         }
       },
+      "SignupInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["client", "phone"],
+        "properties": {
+          "client": {
+            "type": "string",
+            "minLength": 1,
+            "example": "Иванов"
+          },
+          "phone": {
+            "type": "string",
+            "minLength": 1,
+            "example": "+79990001122"
+          }
+        }
+      },
+      "Signup": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SignupInput"
+          },
+          {
+            "type": "object",
+            "required": ["id", "class_id"],
+            "properties": {
+              "id": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "class_id": {
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          }
+        ]
+      },
+      "ClassStats": {
+        "type": "object",
+        "required": ["class_id", "name", "signup_count"],
+        "properties": {
+          "class_id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "name": {
+            "type": "string"
+          },
+          "signup_count": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
       "Error": {
         "type": "object",
         "required": ["error"],
@@ -335,6 +483,16 @@
       },
       "NotFound": {
         "description": "Занятие не найдено",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Нет свободных мест или клиент уже записан",
         "content": {
           "application/json": {
             "schema": {
