@@ -20,9 +20,9 @@ func NewPostgresClassRepository(pool *pgxpool.Pool) *PostgresClassRepository {
 
 func (r *PostgresClassRepository) Create(ctx context.Context, class domain.Class) (domain.Class, error) {
 	const query = `
-		INSERT INTO classes (name, trainer, starts_at, capacity)
-		VALUES ($1, $2, $3, $4)
-		RETURNING id, name, trainer, starts_at, capacity
+		INSERT INTO classes (name, trainer, starts_at, capacity, owner_id)
+		VALUES ($1, $2, $3, $4, $5)
+		RETURNING id, name, trainer, starts_at, capacity, COALESCE(owner_id,0)
 	`
 
 	created, err := scanClass(r.pool.QueryRow(
@@ -32,6 +32,7 @@ func (r *PostgresClassRepository) Create(ctx context.Context, class domain.Class
 		class.Trainer,
 		class.StartsAt,
 		class.Capacity,
+		class.OwnerID,
 	))
 	if err != nil {
 		return domain.Class{}, fmt.Errorf("create class: %w", err)
@@ -42,7 +43,7 @@ func (r *PostgresClassRepository) Create(ctx context.Context, class domain.Class
 
 func (r *PostgresClassRepository) List(ctx context.Context, options ListOptions) ([]domain.Class, error) {
 	const query = `
-		SELECT id, name, trainer, starts_at, capacity
+		SELECT id, name, trainer, starts_at, capacity, COALESCE(owner_id,0)
 		FROM classes
 		WHERE ($1::text = '' OR STRPOS(LOWER(name), LOWER($1)) > 0)
 		  AND ($2::text = '' OR LOWER(name) = LOWER($2))
@@ -120,7 +121,7 @@ func (r *PostgresClassRepository) MostAttended(ctx context.Context) ([]domain.Cl
 
 func (r *PostgresClassRepository) GetByID(ctx context.Context, id int) (domain.Class, error) {
 	const query = `
-		SELECT id, name, trainer, starts_at, capacity
+		SELECT id, name, trainer, starts_at, capacity, COALESCE(owner_id,0)
 		FROM classes
 		WHERE id = $1
 	`
@@ -148,7 +149,7 @@ func (r *PostgresClassRepository) Update(
 		    starts_at = $4,
 		    capacity = $5
 		WHERE id = $1
-		RETURNING id, name, trainer, starts_at, capacity
+		RETURNING id, name, trainer, starts_at, capacity, COALESCE(owner_id,0)
 	`
 
 	updated, err := scanClass(r.pool.QueryRow(
@@ -198,6 +199,7 @@ func scanClass(row rowScanner) (domain.Class, error) {
 		&class.Trainer,
 		&class.StartsAt,
 		&class.Capacity,
+		&class.OwnerID,
 	)
 
 	return class, err
