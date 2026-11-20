@@ -1,0 +1,104 @@
+@base = http://localhost:8000
+
+### Лаба 3 — запускать по порядку в REST Client (VS Code/JetBrains HTTP Client)
+### Имена alice и bob регистрируются один раз; при повторном запуске ожидается 409.
+### Пароль admin берётся из ADMIN_PASSWORD в .env / docker-compose.yml.
+
+# @name registerAlice
+POST {{base}}/auth/register
+Content-Type: application/json
+
+{"username":"alice","password":"alice-test-pass"}
+
+### Повторная регистрация: 409
+POST {{base}}/auth/register
+Content-Type: application/json
+
+{"username":"alice","password":"alice-test-pass"}
+
+# @name registerBob
+POST {{base}}/auth/register
+Content-Type: application/json
+
+{"username":"bob","password":"bob-test-pass"}
+
+### Текущий пользователь через Basic: 200, без password и password_hash
+GET {{base}}/auth/me
+Authorization: Basic YWxpY2U6YWxpY2UtdGVzdC1wYXNz
+
+### Без авторизации: 401
+POST {{base}}/api/classes
+Content-Type: application/json
+
+{"name":"Без входа","trainer":"Анна","starts_at":"2026-11-02T18:30:00+10:00","capacity":15}
+
+### Неверный пароль: 401
+GET {{base}}/auth/me
+Authorization: Basic YWxpY2U6d3JvbmctcGFzcw==
+
+# @name createAlice
+POST {{base}}/api/classes
+Authorization: Basic YWxpY2U6YWxpY2UtdGVzdC1wYXNz
+Content-Type: application/json
+
+{"name":"Лаба 3: йога Алисы","trainer":"Анна","starts_at":"2026-11-02T18:30:00+10:00","capacity":15,"owner_id":999999}
+
+### В ответе owner_id равен ID alice, а не 999999
+GET {{base}}/api/classes/{{createAlice.response.body.$.id}}
+
+### Bob читает чужое занятие: 200
+GET {{base}}/api/classes/{{createAlice.response.body.$.id}}
+Authorization: Basic Ym9iOmJvYi10ZXN0LXBhc3M=
+
+### Bob меняет чужое занятие: 403
+PATCH {{base}}/api/classes/{{createAlice.response.body.$.id}}
+Authorization: Basic Ym9iOmJvYi10ZXN0LXBhc3M=
+Content-Type: application/json
+
+{"capacity":20}
+
+### Bob удаляет чужое занятие: 403
+DELETE {{base}}/api/classes/{{createAlice.response.body.$.id}}
+Authorization: Basic Ym9iOmJvYi10ZXN0LXBhc3M=
+
+### Alice меняет своё занятие: 200
+PATCH {{base}}/api/classes/{{createAlice.response.body.$.id}}
+Authorization: Basic YWxpY2U6YWxpY2UtdGVzdC1wYXNz
+Content-Type: application/json
+
+{"capacity":20}
+
+### Администратор меняет любое занятие: 200
+PATCH {{base}}/api/classes/{{createAlice.response.body.$.id}}
+Authorization: Basic YWRtaW46YWRtaW4tdGVzdC1wYXNz
+Content-Type: application/json
+
+{"capacity":25}
+
+# @name loginAlice
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{"username":"alice","password":"alice-test-pass"}
+
+### JWT Bearer: 200
+GET {{base}}/auth/me
+Authorization: Bearer {{loginAlice.response.body.$.access_token}}
+
+### Поддельный токен: 401
+GET {{base}}/auth/me
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZXhwIjoxODAwMDAwMDAwfQ.invalid-signature
+
+### Лимит входа: отправить этот запрос 6 раз подряд; ответы 401 x5, затем 429
+GET {{base}}/auth/me
+Authorization: Basic YWxpY2U6d3JvbmctcGFzcw==
+
+### Регистрация с попыткой назначить admin: сервер всё равно создаст user
+POST {{base}}/auth/register
+Content-Type: application/json
+
+{"username":"pretend-admin","password":"test-pass","role":"admin"}
+
+### Администратор удаляет чужое занятие: 204 (выполнить последним)
+DELETE {{base}}/api/classes/{{createAlice.response.body.$.id}}
+Authorization: Basic YWRtaW46YWRtaW4tdGVzdC1wYXNz
