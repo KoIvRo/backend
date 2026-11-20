@@ -7,6 +7,7 @@ import (
 
 type Class struct {
 	ID       int       `json:"id"`
+ OwnerID int `json:"owner_id"`
 	Name     string    `json:"name"`
 	Trainer  string    `json:"trainer"`
 	StartsAt time.Time `json:"starts_at"`

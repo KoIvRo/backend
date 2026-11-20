@@ -35,6 +35,7 @@ func New(
 }
 
 type createClassRequest struct {
+	OwnerID  *int      `json:"owner_id"`
 	Name     string    `json:"name"`
 	Trainer  string    `json:"trainer"`
 	StartsAt time.Time `json:"starts_at"`
@@ -51,6 +52,7 @@ func (r createClassRequest) toClass() domain.Class {
 }
 
 type updateClassRequest struct {
+	OwnerID  *int       `json:"owner_id"`
 	Name     *string    `json:"name"`
 	Trainer  *string    `json:"trainer"`
 	StartsAt *time.Time `json:"starts_at"`
@@ -69,6 +71,7 @@ func (h *Handler) CreateClass(w http.ResponseWriter, r *http.Request) {
 	}
 
 	class := request.toClass()
+	class.OwnerID = CurrentUser(r).ID
 
 	if validationError := class.Validate(); validationError != nil {
 		writeError(w, http.StatusBadRequest, validationError.Message, validationError.Field)
@@ -223,6 +226,16 @@ func (h *Handler) ReplaceClass(w http.ResponseWriter, r *http.Request) {
 	}
 
 	class := request.toClass()
+	existing, err := h.classes.GetByID(r.Context(), id)
+	if errors.Is(err, repository.ErrNotFound) {
+		writeError(w, 404, "class not found", "")
+		return
+	}
+	if err != nil {
+		writeInternalServerError(w)
+		return
+	}
+	class.OwnerID = existing.OwnerID
 
 	if validationError := class.Validate(); validationError != nil {
 		writeError(w, http.StatusBadRequest, validationError.Message, validationError.Field)

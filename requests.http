@@ -5,10 +5,11 @@ GET {{base}}/health
 
 ### Создать групповое занятие (Иван)
 POST {{base}}/api/classes
+Authorization: Basic YWRtaW46YWRtaW4tdGVzdC1wYXNz
 Content-Type: application/json
 
 {
-  "name": "Качалка",
+  "name": "йога",
   "trainer": "Иван",
   "starts_at": "2026-11-02T18:30:00+10:00",
   "capacity": 15
@@ -16,6 +17,7 @@ Content-Type: application/json
 
 ### Групповое занятие (Дмитрий)
 POST {{base}}/api/classes
+Authorization: Basic YWRtaW46YWRtaW4tdGVzdC1wYXNz
 Content-Type: application/json
 
 {
@@ -33,6 +35,7 @@ GET {{base}}/api/classes/1
 
 ### Полностью заменить занятие
 PUT {{base}}/api/classes/1
+Authorization: Basic YWRtaW46YWRtaW4tdGVzdC1wYXNz
 Content-Type: application/json
 
 {
@@ -44,24 +47,28 @@ Content-Type: application/json
 
 ### Частично изменить занятие
 PATCH {{base}}/api/classes/1
+Authorization: Basic YWRtaW46YWRtaW4tdGVzdC1wYXNz
 Content-Type: application/json
 
 { "capacity": 50 }
 
 ### Удалить занятие
 DELETE {{base}}/api/classes/1
+Authorization: Basic YWRtaW46YWRtaW4tdGVzdC1wYXNz
 
 ### После удаления должен быть 404
 GET {{base}}/api/classes/1
 
 ### Сломанный JSON, должен быть 400
 POST {{base}}/api/classes
+Authorization: Basic YWRtaW46YWRtaW4tdGVzdC1wYXNz
 Content-Type: application/json
 
 { "name":
 
 ### Пустое обязательное поле, должен быть 400
 POST {{base}}/api/classes
+Authorization: Basic YWRtaW46YWRtaW4tdGVzdC1wYXNz
 Content-Type: application/json
 
 {
@@ -90,7 +97,8 @@ GET {{base}}/api/classes?q=йог
 GET {{base}}/api/classes/stats
 
 ### Записать клиента на занятие
-POST {{base}}/api/classes/1/signups
+POST {{base}}/api/classes/40/signups
+Authorization: Basic YWRtaW46YWRtaW4tdGVzdC1wYXNz
 Content-Type: application/json
 
 {
@@ -103,9 +111,118 @@ GET {{base}}/api/classes/1/signups
 
 ### Повторная запись клиента, должен быть 409
 POST {{base}}/api/classes/1/signups
+Authorization: Basic YWRtaW46YWRtaW4tdGVzdC1wYXNz
 Content-Type: application/json
 
 {
   "client": "Иванов",
   "phone": "+79990001122"
 }
+
+### Лаба 3 — запускать по порядку в VS Code REST Client
+# Send Request появляется над строкой POST/GET, а не над # @name.
+# Директива имени запроса сохраняет ответ для подстановки ID и JWT.
+# Сначала отправь createAlice и loginAlice, иначе переменные ответа не заполнятся.
+# Пароль admin берётся из ADMIN_PASSWORD в .env / docker-compose.yml.
+
+# @name registerAlice
+POST {{base}}/auth/register
+Content-Type: application/json
+
+{"username":"alice","password":"alice-test-pass"}
+
+### Повторная регистрация: 409
+POST {{base}}/auth/register
+Content-Type: application/json
+
+{"username":"alice","password":"alice-test-pass"}
+
+### Регистрация другого пользователя
+# @name registerBob
+POST {{base}}/auth/register
+Content-Type: application/json
+
+{"username":"bob","password":"bob-test-pass"}
+
+### Текущий пользователь через Basic: 200, без password и password_hash
+GET {{base}}/auth/me
+Authorization: Basic YWxpY2U6YWxpY2UtdGVzdC1wYXNz
+
+### Без авторизации: 401
+POST {{base}}/api/classes
+Content-Type: application/json
+
+{"name":"Без входа","trainer":"Анна","starts_at":"2026-11-02T18:30:00+10:00","capacity":15}
+
+### Неверный пароль: 401
+GET {{base}}/auth/me
+Authorization: Basic YWxpY2U6d3JvbmctcGFzcw==
+
+### Создать авторизованным
+# @name createAlice
+POST {{base}}/api/classes
+Authorization: Basic YWxpY2U6YWxpY2UtdGVzdC1wYXNz
+Content-Type: application/json
+
+{"name":"Лаба 3: йога Алисы","trainer":"Анна","starts_at":"2026-11-02T18:30:00+10:00","capacity":15,"owner_id":999999}
+
+### В ответе owner_id равен ID alice, а не 999999
+GET {{base}}/api/classes/{{createAlice.response.body.$.id}}
+
+### Bob читает чужое занятие: 200
+GET {{base}}/api/classes/{{createAlice.response.body.$.id}}
+Authorization: Basic Ym9iOmJvYi10ZXN0LXBhc3M=
+
+### Bob меняет чужое занятие: 403
+PATCH {{base}}/api/classes/{{createAlice.response.body.$.id}}
+Authorization: Basic Ym9iOmJvYi10ZXN0LXBhc3M=
+Content-Type: application/json
+
+{"capacity":20}
+
+### Bob удаляет чужое занятие: 403
+DELETE {{base}}/api/classes/{{createAlice.response.body.$.id}}
+Authorization: Basic Ym9iOmJvYi10ZXN0LXBhc3M=
+
+### Alice меняет своё занятие: 200
+PATCH {{base}}/api/classes/{{createAlice.response.body.$.id}}
+Authorization: Basic YWxpY2U6YWxpY2UtdGVzdC1wYXNz
+Content-Type: application/json
+
+{"capacity":20}
+
+### Администратор меняет любое занятие: 200
+PATCH {{base}}/api/classes/{{createAlice.response.body.$.id}}
+Authorization: Basic YWRtaW46YWRtaW4tdGVzdC1wYXNz
+Content-Type: application/json
+
+{"capacity":25}
+
+### Вход Alice: получить JWT
+# @name loginAlice
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{"username":"alice","password":"alice-test-pass"}
+
+### JWT Bearer: 200
+GET {{base}}/auth/me
+Authorization: Bearer {{loginAlice.response.body.$.access_token}}
+
+### Поддельный токен: 401
+GET {{base}}/auth/me
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZXhwIjoxODAwMDAwMDAwfQ.invalid-signature
+
+### Лимит входа для Bob: отправить этот запрос 6 раз подряд; ответы 401 x5, затем 429
+GET {{base}}/auth/me
+Authorization: Basic Ym9iOndyb25nLXBhc3M=
+
+### Регистрация с попыткой назначить admin: сервер всё равно создаст user
+POST {{base}}/auth/register
+Content-Type: application/json
+
+{"username":"pretend-admin","password":"test-pass","role":"admin"}
+
+### Администратор удаляет чужое занятие: 204 (выполнить последним)
+DELETE {{base}}/api/classes/{{createAlice.response.body.$.id}}
+Authorization: Basic YWRtaW46YWRtaW4tdGVzdC1wYXNz
