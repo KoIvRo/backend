@@ -5,6 +5,7 @@ GET {{base}}/health
 
 ### Создать групповое занятие (Иван)
 POST {{base}}/api/classes
+Authorization: Basic YWRtaW46YWRtaW4tdGVzdC1wYXNz
 Content-Type: application/json
 
 {
@@ -16,6 +17,7 @@ Content-Type: application/json
 
 ### Групповое занятие (Дмитрий)
 POST {{base}}/api/classes
+Authorization: Basic YWRtaW46YWRtaW4tdGVzdC1wYXNz
 Content-Type: application/json
 
 {
@@ -33,6 +35,7 @@ GET {{base}}/api/classes/1
 
 ### Полностью заменить занятие
 PUT {{base}}/api/classes/1
+Authorization: Basic YWRtaW46YWRtaW4tdGVzdC1wYXNz
 Content-Type: application/json
 
 {
@@ -44,24 +47,28 @@ Content-Type: application/json
 
 ### Частично изменить занятие
 PATCH {{base}}/api/classes/1
+Authorization: Basic YWRtaW46YWRtaW4tdGVzdC1wYXNz
 Content-Type: application/json
 
 { "capacity": 50 }
 
 ### Удалить занятие
 DELETE {{base}}/api/classes/1
+Authorization: Basic YWRtaW46YWRtaW4tdGVzdC1wYXNz
 
 ### После удаления должен быть 404
 GET {{base}}/api/classes/1
 
 ### Сломанный JSON, должен быть 400
 POST {{base}}/api/classes
+Authorization: Basic YWRtaW46YWRtaW4tdGVzdC1wYXNz
 Content-Type: application/json
 
 { "name":
 
 ### Пустое обязательное поле, должен быть 400
 POST {{base}}/api/classes
+Authorization: Basic YWRtaW46YWRtaW4tdGVzdC1wYXNz
 Content-Type: application/json
 
 {
@@ -91,6 +98,7 @@ GET {{base}}/api/classes/stats
 
 ### Записать клиента на занятие
 POST {{base}}/api/classes/40/signups
+Authorization: Basic YWRtaW46YWRtaW4tdGVzdC1wYXNz
 Content-Type: application/json
 
 {
@@ -103,6 +111,7 @@ GET {{base}}/api/classes/1/signups
 
 ### Повторная запись клиента, должен быть 409
 POST {{base}}/api/classes/1/signups
+Authorization: Basic YWRtaW46YWRtaW4tdGVzdC1wYXNz
 Content-Type: application/json
 
 {
@@ -110,9 +119,11 @@ Content-Type: application/json
   "phone": "+79990001122"
 }
 
-### Лаба 3 — запускать по порядку в REST Client (VS Code/JetBrains HTTP Client)
-### Имена alice и bob регистрируются один раз; при повторном запуске ожидается 409.
-### Пароль admin берётся из ADMIN_PASSWORD в .env / docker-compose.yml.
+### Лаба 3 — запускать по порядку в VS Code REST Client
+# Send Request появляется над строкой POST/GET, а не над # @name.
+# Директива имени запроса сохраняет ответ для подстановки ID и JWT.
+# Сначала отправь createAlice и loginAlice, иначе переменные ответа не заполнятся.
+# Пароль admin берётся из ADMIN_PASSWORD в .env / docker-compose.yml.
 
 # @name registerAlice
 POST {{base}}/auth/register
@@ -126,6 +137,7 @@ Content-Type: application/json
 
 {"username":"alice","password":"alice-test-pass"}
 
+### Регистрация другого пользователя
 # @name registerBob
 POST {{base}}/auth/register
 Content-Type: application/json
@@ -146,6 +158,7 @@ Content-Type: application/json
 GET {{base}}/auth/me
 Authorization: Basic YWxpY2U6d3JvbmctcGFzcw==
 
+### Создать авторизованным
 # @name createAlice
 POST {{base}}/api/classes
 Authorization: Basic YWxpY2U6YWxpY2UtdGVzdC1wYXNz
@@ -185,6 +198,7 @@ Content-Type: application/json
 
 {"capacity":25}
 
+### Вход Alice: получить JWT
 # @name loginAlice
 POST {{base}}/auth/login
 Content-Type: application/json
