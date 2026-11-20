@@ -213,9 +213,9 @@ Authorization: Bearer {{loginAlice.response.body.$.access_token}}
 GET {{base}}/auth/me
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZXhwIjoxODAwMDAwMDAwfQ.invalid-signature
 
-### Лимит входа: отправить этот запрос 6 раз подряд; ответы 401 x5, затем 429
+### Лимит входа для Bob: отправить этот запрос 6 раз подряд; ответы 401 x5, затем 429
 GET {{base}}/auth/me
-Authorization: Basic YWxpY2U6d3JvbmctcGFzcw==
+Authorization: Basic Ym9iOndyb25nLXBhc3M=
 
 ### Регистрация с попыткой назначить admin: сервер всё равно создаст user
 POST {{base}}/auth/register
